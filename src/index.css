@@ -496,29 +496,6 @@ body {
   color: #e5e7eb;
 }
 
-.dark .auth-divider::before,
-.dark .auth-divider::after {
-  background: #1f2937;
-}
-
-.auth-divider::before,
-.auth-divider::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  width: 38%;
-  height: 1px;
-  background: #e5e7eb;
-}
-
-.auth-divider::before {
-  left: 0;
-}
-
-.auth-divider::after {
-  right: 0;
-}
-
 .auth-form {
   display: flex;
   flex-direction: column;

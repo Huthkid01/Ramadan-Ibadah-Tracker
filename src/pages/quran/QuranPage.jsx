@@ -2,9 +2,18 @@ import { useEffect, useRef, useState } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 
+function getInitialSurahNumber() {
+  if (typeof window === 'undefined') return 1
+  const stored = window.localStorage.getItem('rit-quran-surah')
+  const value = Number(stored)
+  if (!Number.isFinite(value)) return 1
+  if (value < 1 || value > 114) return 1
+  return value
+}
+
 export function QuranPage() {
   const [surahList, setSurahList] = useState([])
-  const [surahNumber, setSurahNumber] = useState(1)
+  const [surahNumber, setSurahNumber] = useState(getInitialSurahNumber)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [verses, setVerses] = useState([])
@@ -100,6 +109,9 @@ export function QuranPage() {
     }
     setCurrentAyahIndex(null)
     setIsPlaying(false)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('rit-quran-surah', String(next))
+    }
     setSurahNumber(next)
   }
 
@@ -130,6 +142,9 @@ export function QuranPage() {
       })
     }
     setCurrentAudio(audio)
+    if (typeof window !== 'undefined') {
+      window.ritQuranAudio = audio
+    }
     setCurrentAyahIndex(index)
     setIsPlaying(true)
   }

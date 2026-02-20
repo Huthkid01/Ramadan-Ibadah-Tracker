@@ -108,7 +108,7 @@ export function PrayerTimesWidget() {
             key={label}
             className="flex items-center justify-between rounded-xl bg-white/80 px-3 py-2 text-xs text-slate-700 shadow-sm dark:bg-slate-900/70 dark:text-slate-100"
           >
-            <span>{label}</span>
+            <span>{label}:</span>
             <span className="font-medium">{time}</span>
           </div>
         ))}

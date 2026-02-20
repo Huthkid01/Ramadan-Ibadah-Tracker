@@ -96,6 +96,14 @@ export function AuthProvider({ children }) {
     },
     signOut: async () => {
       setError(null)
+      if (typeof window !== 'undefined' && window.ritQuranAudio) {
+        try {
+          window.ritQuranAudio.pause()
+        } catch {
+          // ignore
+        }
+        window.ritQuranAudio = null
+      }
       const { error: signOutError } = await supabase.auth.signOut()
       if (signOutError) {
         setError(signOutError)
