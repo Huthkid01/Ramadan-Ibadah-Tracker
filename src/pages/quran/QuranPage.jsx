@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 
@@ -28,6 +28,8 @@ export function QuranPage() {
   })
 
   const verseRefs = useRef([])
+  const resumeAyahRef = useRef(null)
+  const [shouldResumeFromGlobal, setShouldResumeFromGlobal] = useState(false)
 
   useEffect(() => {
     async function getSurahList() {
@@ -43,6 +45,28 @@ export function QuranPage() {
     }
     getSurahList()
   }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const globalAudio = window.ritQuranAudio
+    const storedSurah = Number(window.localStorage.getItem('rit-quran-surah'))
+    const storedAyah = Number(window.localStorage.getItem('rit-quran-ayah'))
+    if (
+      globalAudio &&
+      !globalAudio.paused &&
+      storedSurah === surahNumber &&
+      Number.isFinite(storedAyah)
+    ) {
+      try {
+        globalAudio.pause()
+      } catch (err) {
+        void err
+      }
+      window.ritQuranAudio = null
+      resumeAyahRef.current = storedAyah
+      setShouldResumeFromGlobal(true)
+    }
+  }, [surahNumber])
 
   useEffect(() => {
     let isMounted = true
@@ -114,6 +138,18 @@ export function QuranPage() {
     }
   }, [surahNumber])
 
+  useEffect(() => {
+    if (!shouldResumeFromGlobal) return
+    if (!verses.length) return
+    const index = resumeAyahRef.current
+    if (!Number.isFinite(index) || index < 0 || index >= verses.length) {
+      setShouldResumeFromGlobal(false)
+      return
+    }
+    playAyahAt(index)
+    setShouldResumeFromGlobal(false)
+  }, [shouldResumeFromGlobal, verses, playAyahAt])
+
   function handleSelectSurah(event) {
     const next = Number(event.target.value)
     if (!Number.isFinite(next) || next === surahNumber) return
@@ -139,49 +175,52 @@ export function QuranPage() {
     setSurahNumber(next)
   }
 
-  function playAyahAt(index) {
-    if (!verses[index] || !verses[index].audioUrl) {
-      return
-    }
-    if (typeof window !== 'undefined' && window.ritQuranAudio) {
-      try {
-        window.ritQuranAudio.pause()
-      } catch {
-        // ignore
-      }
-    }
-    if (currentAudio) {
-      currentAudio.pause()
-    }
-    const audio = new Audio(verses[index].audioUrl)
-    audio.addEventListener('ended', () => {
-      const nextIndex = index + 1
-      if (nextIndex >= verses.length) {
-        setIsPlaying(false)
-        setCurrentAudio(null)
-        setCurrentAyahIndex(null)
+  const playAyahAt = useCallback(
+    (index) => {
+      if (!verses[index] || !verses[index].audioUrl) {
         return
       }
-      setCurrentAyahIndex(nextIndex)
-      playAyahAt(nextIndex)
-    })
-    const playPromise = audio.play()
-    if (playPromise && typeof playPromise.then === 'function') {
-      playPromise.catch((err) => {
-        if (err?.name === 'AbortError') return
-        setError(err)
+      if (typeof window !== 'undefined' && window.ritQuranAudio) {
+        try {
+          window.ritQuranAudio.pause()
+        } catch (err) {
+          void err
+        }
+      }
+      if (currentAudio) {
+        currentAudio.pause()
+      }
+      const audio = new Audio(verses[index].audioUrl)
+      audio.addEventListener('ended', () => {
+        const nextIndex = index + 1
+        if (nextIndex >= verses.length) {
+          setIsPlaying(false)
+          setCurrentAudio(null)
+          setCurrentAyahIndex(null)
+          return
+        }
+        setCurrentAyahIndex(nextIndex)
+        playAyahAt(nextIndex)
       })
-    }
-    setCurrentAudio(audio)
-    if (typeof window !== 'undefined') {
-      window.ritQuranAudio = audio
-    }
-    setCurrentAyahIndex(index)
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('rit-quran-ayah', String(index))
-    }
-    setIsPlaying(true)
-  }
+      const playPromise = audio.play()
+      if (playPromise && typeof playPromise.then === 'function') {
+        playPromise.catch((err) => {
+          if (err?.name === 'AbortError') return
+          setError(err)
+        })
+      }
+      setCurrentAudio(audio)
+      if (typeof window !== 'undefined') {
+        window.ritQuranAudio = audio
+      }
+      setCurrentAyahIndex(index)
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('rit-quran-ayah', String(index))
+      }
+      setIsPlaying(true)
+    },
+    [currentAudio, setError, setIsPlaying, verses]
+  )
 
   function handleToggleSurahAudio() {
     if (currentAudio) {
