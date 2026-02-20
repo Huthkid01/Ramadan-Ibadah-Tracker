@@ -103,6 +103,14 @@ export function QuranPage() {
     const next = Number(event.target.value)
     if (!Number.isFinite(next) || next === surahNumber) return
     if (next < 1 || next > 114) return
+    if (typeof window !== 'undefined' && window.ritQuranAudio) {
+      try {
+        window.ritQuranAudio.pause()
+      } catch {
+        // ignore
+      }
+      window.ritQuranAudio = null
+    }
     if (currentAudio) {
       currentAudio.pause()
       setCurrentAudio(null)
@@ -118,6 +126,13 @@ export function QuranPage() {
   function playAyahAt(index) {
     if (!verses[index] || !verses[index].audioUrl) {
       return
+    }
+    if (typeof window !== 'undefined' && window.ritQuranAudio) {
+      try {
+        window.ritQuranAudio.pause()
+      } catch {
+        // ignore
+      }
     }
     if (currentAudio) {
       currentAudio.pause()
