@@ -81,7 +81,22 @@ export function QuranPage() {
 
         setMeta(nextMeta)
         setVerses(combined)
-        setCurrentAyahIndex(null)
+        if (typeof window !== 'undefined') {
+          const storedSurah = Number(window.localStorage.getItem('rit-quran-surah'))
+          const storedAyah = Number(window.localStorage.getItem('rit-quran-ayah'))
+          if (
+            storedSurah === surahNumber &&
+            Number.isFinite(storedAyah) &&
+            storedAyah >= 0 &&
+            storedAyah < combined.length
+          ) {
+            setCurrentAyahIndex(storedAyah)
+          } else {
+            setCurrentAyahIndex(null)
+          }
+        } else {
+          setCurrentAyahIndex(null)
+        }
       } catch (err) {
         if (!isMounted || err.name === 'AbortError') return
         setError(err)
@@ -119,6 +134,7 @@ export function QuranPage() {
     setIsPlaying(false)
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('rit-quran-surah', String(next))
+      window.localStorage.removeItem('rit-quran-ayah')
     }
     setSurahNumber(next)
   }
@@ -161,6 +177,9 @@ export function QuranPage() {
       window.ritQuranAudio = audio
     }
     setCurrentAyahIndex(index)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('rit-quran-ayah', String(index))
+    }
     setIsPlaying(true)
   }
 

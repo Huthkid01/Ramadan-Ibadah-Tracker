@@ -2,6 +2,8 @@ const AYAH_API =
   import.meta.env.VITE_QURAN_API_URL ||
   'https://api.alquran.cloud/v1/ayah/random'
 
+const HADITH_API = import.meta.env.VITE_HADITH_API_URL || null
+
 const LOCAL_HADITHS = [
   {
     text: 'Actions are judged by intentions, so each man will have what he intended.',
@@ -49,6 +51,33 @@ export async function fetchDailyAyah() {
 }
 
 export async function fetchDailyHadith() {
+  if (HADITH_API) {
+    try {
+      const res = await fetch(HADITH_API)
+      if (res.ok) {
+        const json = await res.json()
+        const candidate =
+          json?.data?.hadith ||
+          json?.data?.text ||
+          json?.hadith ||
+          json?.text ||
+          null
+        if (candidate && typeof candidate === 'string') {
+          const reference =
+            json?.data?.reference ||
+            json?.reference ||
+            'Hadith'
+          return {
+            text: candidate,
+            reference,
+          }
+        }
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   const index = Math.floor(Math.random() * LOCAL_HADITHS.length)
   return LOCAL_HADITHS[index]
 }
