@@ -31,6 +31,53 @@ export function QuranPage() {
   const resumeAyahRef = useRef(null)
   const [shouldResumeFromGlobal, setShouldResumeFromGlobal] = useState(false)
 
+  const playAyahAt = useCallback(
+    (index) => {
+      if (!verses[index] || !verses[index].audioUrl) {
+        return
+      }
+      if (typeof window !== 'undefined' && window.ritQuranAudio) {
+        try {
+          window.ritQuranAudio.pause()
+        } catch (err) {
+          void err
+        }
+      }
+      if (currentAudio) {
+        currentAudio.pause()
+      }
+      const audio = new Audio(verses[index].audioUrl)
+      audio.addEventListener('ended', () => {
+        const nextIndex = index + 1
+        if (nextIndex >= verses.length) {
+          setIsPlaying(false)
+          setCurrentAudio(null)
+          setCurrentAyahIndex(null)
+          return
+        }
+        setCurrentAyahIndex(nextIndex)
+        playAyahAt(nextIndex)
+      })
+      const playPromise = audio.play()
+      if (playPromise && typeof playPromise.then === 'function') {
+        playPromise.catch((err) => {
+          if (err?.name === 'AbortError') return
+          setError(err)
+        })
+      }
+      setCurrentAudio(audio)
+      if (typeof window !== 'undefined') {
+        window.ritQuranAudio = audio
+      }
+      setCurrentAyahIndex(index)
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('rit-quran-ayah', String(index))
+      }
+      setIsPlaying(true)
+    },
+    [currentAudio, setError, setIsPlaying, verses]
+  )
+
   useEffect(() => {
     async function getSurahList() {
       try {
@@ -174,53 +221,6 @@ export function QuranPage() {
     }
     setSurahNumber(next)
   }
-
-  const playAyahAt = useCallback(
-    (index) => {
-      if (!verses[index] || !verses[index].audioUrl) {
-        return
-      }
-      if (typeof window !== 'undefined' && window.ritQuranAudio) {
-        try {
-          window.ritQuranAudio.pause()
-        } catch (err) {
-          void err
-        }
-      }
-      if (currentAudio) {
-        currentAudio.pause()
-      }
-      const audio = new Audio(verses[index].audioUrl)
-      audio.addEventListener('ended', () => {
-        const nextIndex = index + 1
-        if (nextIndex >= verses.length) {
-          setIsPlaying(false)
-          setCurrentAudio(null)
-          setCurrentAyahIndex(null)
-          return
-        }
-        setCurrentAyahIndex(nextIndex)
-        playAyahAt(nextIndex)
-      })
-      const playPromise = audio.play()
-      if (playPromise && typeof playPromise.then === 'function') {
-        playPromise.catch((err) => {
-          if (err?.name === 'AbortError') return
-          setError(err)
-        })
-      }
-      setCurrentAudio(audio)
-      if (typeof window !== 'undefined') {
-        window.ritQuranAudio = audio
-      }
-      setCurrentAyahIndex(index)
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('rit-quran-ayah', String(index))
-      }
-      setIsPlaying(true)
-    },
-    [currentAudio, setError, setIsPlaying, verses]
-  )
 
   function handleToggleSurahAudio() {
     if (currentAudio) {
