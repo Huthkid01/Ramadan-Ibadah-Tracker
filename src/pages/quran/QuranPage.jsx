@@ -122,7 +122,7 @@ export function QuranPage() {
 
     const controller = new AbortController()
 
-    async function loadSurah() {
+    async function loadSurah(retryCount = 0) {
       try {
         const url = `https://api.alquran.cloud/v1/surah/${surahNumber}/editions/quran-uthmani,en.asad,ar.alafasy`
         const res = await fetch(url, { signal: controller.signal })
@@ -170,8 +170,12 @@ export function QuranPage() {
         }
       } catch (err) {
         if (!isMounted || err.name === 'AbortError') return
-        setError(err)
-        setVerses([])
+        if (retryCount < 3) {
+          setTimeout(() => loadSurah(retryCount + 1), 1000 * (retryCount + 1))
+        } else {
+          setError(err)
+          setVerses([])
+        }
       } finally {
         if (isMounted) setLoading(false)
       }
