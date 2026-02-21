@@ -123,6 +123,24 @@ export function QuranPage() {
     const controller = new AbortController()
 
     async function loadSurah(retryCount = 0) {
+      const CACHE_KEY = `rit-quran-fallback-${surahNumber}`
+      function saveFallback(data, meta) {
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify({ data, meta, ts: Date.now() }))
+        } catch {}
+      }
+      function loadFallback() {
+        try {
+          const raw = localStorage.getItem(CACHE_KEY)
+          if (!raw) return null
+          const parsed = JSON.parse(raw)
+          if (Date.now() - parsed.ts > 86400000) return null // stale
+          return { data: parsed.data, meta: parsed.meta }
+        } catch {
+          return null
+        }
+      }
+
       try {
         const url = `https://api.alquran.cloud/v1/surah/${surahNumber}/editions/quran-uthmani,en.asad,ar.alafasy`
         const res = await fetch(url, { signal: controller.signal })
@@ -140,6 +158,17 @@ export function QuranPage() {
           translation: englishEdition.ayahs[index]?.text ?? '',
           audioUrl: audioEdition.ayahs[index]?.audio ?? '',
         }))
+
+        if (combined.length === 0) {
+          throw new Error('Empty ayahs')
+        }
+
+        saveFallback(combined, {
+          name: arabicEdition.name,
+          englishName: arabicEdition.englishName,
+          revelationType: arabicEdition.revelationType,
+          ayahs: arabicEdition.numberOfAyahs,
+        })
 
         if (!isMounted) return
 
@@ -171,11 +200,23 @@ export function QuranPage() {
       } catch (err) {
         if (!isMounted || err.name === 'AbortError') return
         if (retryCount < 3) {
+          setLoading(true)
           setTimeout(() => loadSurah(retryCount + 1), 1000 * (retryCount + 1))
-        } else {
-          setError(err)
-          setVerses([])
+          return
         }
+
+        const cached = loadFallback()
+        if (cached) {
+          if (!isMounted) return
+          setVerses(cached.data)
+          setMeta(cached.meta)
+          setCurrentAyahIndex(null)
+          setLoading(false)
+          return
+        }
+
+        setError(err)
+        setVerses([])
       } finally {
         if (isMounted) setLoading(false)
       }
