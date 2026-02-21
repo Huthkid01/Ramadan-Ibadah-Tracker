@@ -79,7 +79,7 @@ export function QuranPage() {
   )
 
   useEffect(() => {
-    async function getSurahList() {
+    async function getSurahList() {.
       try {
         const res = await fetch('https://api.alquran.cloud/v1/surah')
         const json = await res.json()
@@ -216,6 +216,7 @@ export function QuranPage() {
         }
 
         setError(err)
+,
         setVerses([])
       } finally {
         if (isMounted) setLoading(false)
@@ -246,6 +247,7 @@ export function QuranPage() {
     const next = Number(event.target.value)
     if (!Number.isFinite(next) || next === surahNumber) return
     if (next < 1 || next > 114) return
+
     if (typeof window !== 'undefined' && window.ritQuranAudio) {
       try {
         window.ritQuranAudio.pause()
@@ -254,17 +256,20 @@ export function QuranPage() {
       }
       window.ritQuranAudio = null
     }
+
     if (currentAudio) {
       currentAudio.pause()
       setCurrentAudio(null)
     }
+
     setCurrentAyahIndex(null)
     setIsPlaying(false)
+    setSurahNumber(next)
+
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('rit-quran-surah', String(next))
       window.localStorage.removeItem('rit-quran-ayah')
     }
-    setSurahNumber(next)
   }
 
   function handleToggleSurahAudio() {
@@ -302,109 +307,55 @@ export function QuranPage() {
     <div className="quran-page">
       <header className="quran-header">
         <h1 className="quran-title">Quran</h1>
-        <p className="quran-subtitle">
-          Continue your recitation and gently track where you left off.
-        </p>
+        <div className="quran-meta">
+          <p>
+            {meta.name} ({meta.englishName})
+          </p>
+          <p>
+            {meta.revelationType} • {meta.ayahs} ayahs
+          </p>
+        </div>
+        <div className="quran-controls">
+          <select
+            value={surahNumber}
+            onChange={handleSelectSurah}
+            className="surah-select"
+            disabled={loading}
+          >
+            {surahList.map((surah) => (
+              <option key={surah.number} value={surah.number}>
+                {surah.number}. {surah.englishName} ({surah.name})
+              </option>
+            ))}
+          </select>
+          <Button onClick={handleToggleSurahAudio} disabled={loading || error}>
+            {isPlaying ? 'Pause' : 'Play Surah'}
+          </Button>
+        </div>
       </header>
-
-      <section className="quran-grid">
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {meta.englishName ? `Surah ${meta.englishName}` : 'Current reading'}
-            </CardTitle>
-            <CardDescription>
-              {meta.name
-                ? `${meta.name} · ${meta.revelationType} · ${meta.ayahs} ayahs`
-                : 'Read the Quran with Arabic and English translation.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="quran-reader-header">
-              <div className="quran-reader-info">
-                <select
-                  className="quran-surah-select"
-                  value={surahNumber}
-                  onChange={handleSelectSurah}
-                  disabled={!surahList.length}
-                >
-                  {surahList.length ? (
-                    surahList.map((surah) => (
-                      <option key={surah.number} value={surah.number}>
-                        {surah.number} · {surah.englishName}
-                      </option>
-                    ))
-                  ) : (
-                    <option value={1}>1 · Al-Fatiha</option>
-                  )}
-                </select>
+      <CardContent>
+        {loading && <p>Loading...</p>}
+        {error && (
+          <p className="error-message">
+            Unable to load Quran right now. Please check your connection and try again.
+          </p>
+        )}
+        {!loading && !error && (
+          <div className="quran-verses">
+            {verses.map((verse, index) => (
+              <div
+                key={verse.numberInSurah}
+                ref={(el) => (verseRefs.current[index] = el)}
+                className={`quran-verse ${currentAyahIndex === index ? 'is-playing' : ''}`}
+                onClick={() => playAyahAt(index)}
+              >
+                <p className="verse-arabic">{verse.arabic}</p>
+                <p className="verse-translation">{verse.translation}</p>
               </div>
-              <div className="quran-reader-controls">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleToggleSurahAudio}
-                >
-                  {isPlaying ? 'Pause recitation' : 'Play Surah audio'}
-                </Button>
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="quran-reader-loading">
-                <div className="quran-reader-spinner" />
-              </div>
-            ) : error ? (
-              <p className="quran-reader-error">
-                Unable to load Quran right now. Please check your connection and try again.
-              </p>
-            ) : (
-              <div className="quran-verses">
-                {verses.map((verse, index) => (
-                  <div
-                    key={verse.numberInSurah}
-                    className={`quran-verse${
-                      currentAyahIndex === index ? ' quran-verse-active' : ''
-                    }`}
-                    ref={(el) => {
-                      verseRefs.current[index] = el
-                    }}
-                  >
-                    <div className="quran-verse-meta">
-                      <span className="quran-verse-number">{verse.numberInSurah}</span>
-                    </div>
-                    <div className="quran-verse-text">
-                      <p className="quran-verse-ar">{verse.arabic}</p>
-                      <p className="quran-verse-en">{verse.translation}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Today&apos;s goal</CardTitle>
-            <CardDescription>Set an intention for today&apos;s reading.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="quran-goal-text">
-              Use the daily tracker page to log how many pages you read each day.
-            </p>
-            <Button
-              type="button"
-              className="quran-goal-button"
-              onClick={() => {
-                window.location.href = '/tracker'
-              }}
-            >
-              Open daily tracker
-            </Button>
-          </CardContent>
-        </Card>
-      </section>
+            ))}
+          </div>
+        )}
+      </CardContent>
     </div>
   )
 }
