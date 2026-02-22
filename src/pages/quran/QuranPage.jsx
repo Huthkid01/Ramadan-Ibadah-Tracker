@@ -314,6 +314,9 @@ export function QuranPage() {
 
   return (
     <div className="quran-page">
+      <div className="maintenance-banner" style={{background:'#ff9800',color:'#fff',padding:'8px 12px',textAlign:'center',fontSize:'14px'}}>
+        🛠️ Maintenance in progress – audio may be intermittent. Thank you for your patience.
+      </div>
       <header className="quran-header">
         <h1 className="quran-title">Quran</h1>
         <div className="quran-meta">
