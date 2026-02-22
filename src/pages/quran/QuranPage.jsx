@@ -79,7 +79,7 @@ export function QuranPage() {
   )
 
   useEffect(() => {
-    async function getSurahList() {.
+    async function getSurahList() {
       try {
         const res = await fetch('https://api.alquran.cloud/v1/surah')
         const json = await res.json()
@@ -127,7 +127,9 @@ export function QuranPage() {
       function saveFallback(data, meta) {
         try {
           localStorage.setItem(CACHE_KEY, JSON.stringify({ data, meta, ts: Date.now() }))
-        } catch {}
+        } catch {
+          // ignore
+        }
       }
       function loadFallback() {
         try {
@@ -142,21 +144,29 @@ export function QuranPage() {
       }
 
       try {
-        const url = `https://api.alquran.cloud/v1/surah/${surahNumber}/editions/quran-uthmani,en.asad,ar.alafasy`
-        const res = await fetch(url, { signal: controller.signal })
-        if (!res.ok) {
-          throw new Error('Unable to load Quran at the moment.')
-        }
-        const json = await res.json()
-        if (!json || !json.data || !Array.isArray(json.data) || json.data.length < 3) {
-          throw new Error('Unexpected Quran response.')
-        }
-        const [arabicEdition, englishEdition, audioEdition] = json.data
-        const combined = arabicEdition.ayahs.map((ayah, index) => ({
+        // 1) Surah metadata (name, revelationType, numberOfAyahs)
+        const metaRes = await fetch(
+          `https://quranapi.pages.dev/api/surah/${surahNumber}.json`,
+          { signal: controller.signal }
+        )
+        if (!metaRes.ok) throw new Error('Unable to load surah metadata.')
+        const metaJson = await metaRes.json()
+        const { name, revelationType, numberOfAyahs } = metaJson
+
+        // 2) Ayahs (arabic + translation + audio)
+        const ayahRes = await fetch(
+          `https://quranapi.pages.dev/api/surah/${surahNumber}/ayahs.json`,
+          { signal: controller.signal }
+        )
+        if (!ayahRes.ok) throw new Error('Unable to load ayahs.')
+        const ayahJson = await ayahRes.json()
+
+        // Build combined array
+        const combined = ayahJson.map((ayah) => ({
           numberInSurah: ayah.numberInSurah,
-          arabic: ayah.text,
-          translation: englishEdition.ayahs[index]?.text ?? '',
-          audioUrl: audioEdition.ayahs[index]?.audio ?? '',
+          arabic: ayah.arabic,
+          translation: ayah.translation || '',
+          audioUrl: ayah.audio || '',
         }))
 
         if (combined.length === 0) {
@@ -164,19 +174,19 @@ export function QuranPage() {
         }
 
         saveFallback(combined, {
-          name: arabicEdition.name,
-          englishName: arabicEdition.englishName,
-          revelationType: arabicEdition.revelationType,
-          ayahs: arabicEdition.numberOfAyahs,
+          name,
+          englishName: metaJson.englishName || `Surah ${surahNumber}`,
+          revelationType,
+          ayahs: numberOfAyahs,
         })
 
         if (!isMounted) return
 
         const nextMeta = {
-          name: arabicEdition.name,
-          englishName: arabicEdition.englishName,
-          revelationType: arabicEdition.revelationType,
-          ayahs: arabicEdition.numberOfAyahs,
+          name: metaJson.name,
+          englishName: metaJson.englishName || `Surah ${surahNumber}`,
+          revelationType: metaJson.revelationType,
+          ayahs: metaJson.numberOfAyahs,
         }
 
         setMeta(nextMeta)
@@ -216,7 +226,6 @@ export function QuranPage() {
         }
 
         setError(err)
-,
         setVerses([])
       } finally {
         if (isMounted) setLoading(false)
