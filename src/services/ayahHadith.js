@@ -3,6 +3,8 @@ const AYAH_API =
   'https://api.alquran.cloud/v1/ayah/random'
 
 const HADITH_API = import.meta.env.VITE_HADITH_API_URL || null
+const HADITH_DATASET_URL =
+  'https://raw.githubusercontent.com/thisismodou/Random-Hadith-Generator/master/ahadith.json'
 
 const LOCAL_HADITHS = [
   {
@@ -51,6 +53,46 @@ export async function fetchDailyAyah() {
 }
 
 export async function fetchDailyHadith() {
+  try {
+    const res = await fetch(HADITH_DATASET_URL)
+    if (res.ok) {
+      const json = await res.json()
+      let list = []
+      if (Array.isArray(json)) {
+        list = json
+      } else if (json && Array.isArray(json.ahadith)) {
+        list = json.ahadith
+      } else if (json && typeof json === 'object') {
+        list = Object.values(json)
+      }
+      if (list.length > 0) {
+        const raw = list[Math.floor(Math.random() * list.length)]
+        if (raw) {
+          const text =
+            (typeof raw === 'string' && raw) ||
+            raw.text ||
+            raw.hadith ||
+            raw.hadith_text ||
+            raw.content ||
+            null
+          const reference =
+            raw.reference ||
+            raw.source ||
+            [raw.book, raw.chapter, raw.hadithNumber].filter(Boolean).join(' • ') ||
+            'Hadith'
+          if (text && typeof text === 'string') {
+            return {
+              text,
+              reference,
+            }
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Random Hadith dataset fetch failed:', error)
+  }
+
   if (HADITH_API) {
     try {
       const res = await fetch(HADITH_API)
