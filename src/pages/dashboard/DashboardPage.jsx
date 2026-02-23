@@ -112,7 +112,14 @@ export function DashboardPage() {
     ? selectedStats.salahCount
     : summary?.totalSalah ?? 0
   const dayLabel = selectedRamadanDay ? `Day ${selectedRamadanDay}` : 'Today'
-  const quranProgress = summary?.quranProgress ?? 0
+  const quranProgressRaw = summary?.quranProgress ?? 0
+  const quranProgressValue = Number.isFinite(quranProgressRaw)
+    ? Math.max(0, Math.min(quranProgressRaw, 100))
+    : 0
+  const quranProgressLabel =
+    quranProgressValue > 0 && quranProgressValue < 1
+      ? quranProgressValue.toFixed(1)
+      : quranProgressValue.toFixed(0)
   const streak = summary?.currentStreak ?? 0
   const weekly = summary?.weekly ?? []
   const fastingDays = summary?.fastingDays ?? 0
@@ -195,7 +202,7 @@ export function DashboardPage() {
                   </div>
                   <div className="dashboard-hero-stat">
                     <span className="dashboard-hero-stat-label">Qur&apos;an progress</span>
-                    <span className="dashboard-hero-stat-value">{quranProgress}%</span>
+                    <span className="dashboard-hero-stat-value">{quranProgressLabel}%</span>
                   </div>
                   <div className="dashboard-hero-stat">
                     <span className="dashboard-hero-stat-label">Fasting days</span>
@@ -269,7 +276,7 @@ export function DashboardPage() {
             <CardDescription>Progress towards your 30 Juz goal.</CardDescription>
           </CardHeader>
           <CardContent className="dashboard-quran-content">
-            <p className="dashboard-quran-number">{quranProgress}%</p>
+            <p className="dashboard-quran-number">{quranProgressLabel}%</p>
             <p className="dashboard-quran-caption">of 30 Juz completed</p>
           </CardContent>
         </Card>

@@ -15,7 +15,8 @@ export function QuranPage() {
   const [surahList, setSurahList] = useState([])
   const [surahNumber, setSurahNumber] = useState(getInitialSurahNumber)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [loadError, setLoadError] = useState(null)
+  const [audioError, setAudioError] = useState(null)
   const [verses, setVerses] = useState([])
   const [currentAudio, setCurrentAudio] = useState(null)
   const [currentAyahIndex, setCurrentAyahIndex] = useState(null)
@@ -56,7 +57,7 @@ export function QuranPage() {
         if (playPromise && typeof playPromise.then === 'function') {
           playPromise.catch((err) => {
             if (err?.name === 'AbortError') return
-            setError(err)
+            setAudioError(err)
           })
         }
         setIsPlaying(true)
@@ -83,7 +84,7 @@ export function QuranPage() {
       if (playPromise && typeof playPromise.then === 'function') {
         playPromise.catch((err) => {
           if (err?.name === 'AbortError') return
-          setError(err)
+          setAudioError(err)
         })
       }
       setCurrentAudio(audio)
@@ -95,7 +96,7 @@ export function QuranPage() {
         window.localStorage.setItem('rit-quran-ayah', String(index))
       }
     },
-    [currentAudio, setError, setIsPlaying, verses]
+    [currentAudio, setIsPlaying, setAudioError, verses]
   )
 
   useEffect(() => {
@@ -143,7 +144,8 @@ export function QuranPage() {
   useEffect(() => {
     let isMounted = true
     setLoading(true)
-    setError(null)
+    setLoadError(null)
+    setAudioError(null)
 
     const controller = new AbortController()
 
@@ -258,9 +260,46 @@ export function QuranPage() {
           setLoading(false)
           return
         }
+        try {
+          const altArRes = await fetch(
+            `https://alquran-api.pages.dev/api/quran/surah/${surahNumber}?lang=ar`,
+            { signal: controller.signal }
+          )
+          const altEnRes = await fetch(
+            `https://alquran-api.pages.dev/api/quran/surah/${surahNumber}?lang=en`,
+            { signal: controller.signal }
+          )
+          if (altArRes.ok && altEnRes.ok) {
+            const altAr = await altArRes.json()
+            const altEn = await altEnRes.json()
+            const arVerses = Array.isArray(altAr?.verses) ? altAr.verses : []
+            const enVerses = Array.isArray(altEn?.verses) ? altEn.verses : []
+            if (arVerses.length > 0) {
+              const combinedAlt = arVerses.map((v, index) => ({
+                numberInSurah: index + 1,
+                arabic: v.text ?? '',
+                translation: enVerses[index]?.translation ?? '',
+                audioUrl: v.audio ?? enVerses[index]?.audio ?? '',
+              }))
+              const metaAlt = {
+                name: altAr.transliteration ?? `Surah ${surahNumber}`,
+                englishName: altEn.translation ?? altAr.translation ?? `Surah ${surahNumber}`,
+                revelationType: altAr.revelationType ?? '',
+                ayahs: combinedAlt.length,
+              }
+              if (!isMounted) return
+              setMeta(metaAlt)
+              setVerses(combinedAlt)
+              setCurrentAyahIndex(null)
+              setLoading(false)
+              return
+            }
+          }
+        } catch (altErr) {
+          console.error('Alternate Quran API failed', altErr)
+        }
 
-        console.error('loadSurah failed', err)
-        setError(err)
+        setLoadError(err)
         setVerses([])
       } finally {
         if (isMounted) setLoading(false)
@@ -323,7 +362,7 @@ export function QuranPage() {
         if (playPromise && typeof playPromise.then === 'function') {
           playPromise.catch((err) => {
             if (err?.name === 'AbortError') return
-            setError(err)
+            setAudioError(err)
           })
         }
         setIsPlaying(true)
@@ -378,19 +417,26 @@ export function QuranPage() {
               </option>
             ))}
           </select>
-          <Button onClick={handleToggleSurahAudio} disabled={loading || error || isBuffering}>
+          <Button onClick={handleToggleSurahAudio} disabled={loading || loadError || isBuffering}>
             {isBuffering ? 'Buffering…' : isPlaying ? 'Pause' : 'Play Surah'}
           </Button>
         </div>
       </header>
       <CardContent>
         {loading && <p>Loading...</p>}
-        {error && (
+        {loadError && (
           <p className="error-message">
-            Unable to load Quran right now. Please check your connection and try again.
+            Unable to load this surah right now from any source on this connection. Please try
+            again in a few minutes or switch networks.
           </p>
         )}
-        {!loading && !error && (
+        {audioError && !loadError && (
+          <p className="error-message">
+            There was a problem starting audio playback on this device. Please tap play again or
+            try a different network.
+          </p>
+        )}
+        {!loading && !loadError && (
           <div className="quran-verses">
             {verses.map((verse, index) => (
               <div
