@@ -974,15 +974,13 @@ body {
 
 .dashboard-hero-stats {
   display: flex;
-  flex-wrap: nowrap;
-  gap: 0.5rem;
+  gap: 1rem;
   margin-top: 0.8rem;
 }
 
 .dashboard-hero-stat {
   flex: 1 1 0;
-  min-width: 0;
-  padding: 0.45rem 0.6rem;
+  padding: 0.6rem 0.8rem;
   border-radius: 0.85rem;
   background: rgba(15, 23, 42, 0.45);
 }
@@ -1010,6 +1008,10 @@ body {
 }
 
 @media (max-width: 900px) {
+  .dashboard-hero-stats {
+    flex-direction: column;
+  }
+
   .dashboard-hero-stats {
     flex-direction: column;
   }
