@@ -20,6 +20,7 @@ export function QuranPage() {
   const [currentAudio, setCurrentAudio] = useState(null)
   const [currentAyahIndex, setCurrentAyahIndex] = useState(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isBuffering, setIsBuffering] = useState(false)
   const [meta, setMeta] = useState({
     name: '',
     englishName: '',
@@ -47,6 +48,26 @@ export function QuranPage() {
         currentAudio.pause()
       }
       const audio = new Audio(verses[index].audioUrl)
+      audio.preload = 'auto'
+      setIsBuffering(true)
+      setIsPlaying(false)
+      const handleCanPlay = () => {
+        const playPromise = audio.play()
+        if (playPromise && typeof playPromise.then === 'function') {
+          playPromise.catch((err) => {
+            if (err?.name === 'AbortError') return
+            setError(err)
+          })
+        }
+        setIsPlaying(true)
+        setIsBuffering(false)
+        audio.removeEventListener('canplay', handleCanPlay)
+      }
+      audio.addEventListener('canplay', handleCanPlay)
+      audio.addEventListener('error', () => {
+        setIsBuffering(false)
+        setIsPlaying(false)
+      })
       audio.addEventListener('ended', () => {
         const nextIndex = index + 1
         if (nextIndex >= verses.length) {
@@ -73,10 +94,14 @@ export function QuranPage() {
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('rit-quran-ayah', String(index))
       }
-      setIsPlaying(true)
     },
     [currentAudio, setError, setIsPlaying, verses]
   )
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem('rit-quran-surah', String(surahNumber))
+  }, [surahNumber])
 
   useEffect(() => {
     async function getSurahList() {
@@ -144,29 +169,38 @@ export function QuranPage() {
       }
 
       try {
-        // 1) Surah metadata (name, revelationType, numberOfAyahs)
-        const metaRes = await fetch(
-          `https://quranapi.pages.dev/api/surah/${surahNumber}.json`,
-          { signal: controller.signal }
-        )
-        if (!metaRes.ok) throw new Error('Unable to load surah metadata.')
-        const metaJson = await metaRes.json()
-        const { name, revelationType, numberOfAyahs } = metaJson
+        const url = `https://api.alquran.cloud/v1/surah/${surahNumber}/editions/quran-uthmani,en.asad,ar.alafasy`
+        const res = await fetch(url, { signal: controller.signal })
+        if (!res.ok) {
+          throw new Error('Unable to load Quran at the moment.')
+        }
+        const json = await res.json()
+        const editions = json?.data
+        if (!Array.isArray(editions) || editions.length === 0) {
+          throw new Error('Unexpected Quran response.')
+        }
 
-        // 2) Ayahs (arabic + translation + audio)
-        const ayahRes = await fetch(
-          `https://quranapi.pages.dev/api/surah/${surahNumber}/ayahs.json`,
-          { signal: controller.signal }
-        )
-        if (!ayahRes.ok) throw new Error('Unable to load ayahs.')
-        const ayahJson = await ayahRes.json()
+        const arabicEdition =
+          editions.find((e) => e.edition?.identifier === 'quran-uthmani' || e.identifier === 'quran-uthmani') ??
+          editions[0]
 
-        // Build combined array
-        const combined = ayahJson.map((ayah) => ({
+        const englishEdition =
+          editions.find((e) => e.edition?.identifier === 'en.asad' || e.identifier === 'en.asad') ??
+          editions.find((e) => e.edition?.language === 'en' || e.language === 'en')
+
+        const audioEdition =
+          editions.find((e) => e.edition?.identifier === 'ar.alafasy' || e.identifier === 'ar.alafasy') ??
+          editions.find((e) => e.ayahs && e.ayahs[0] && e.ayahs[0].audio)
+
+        if (!arabicEdition || !Array.isArray(arabicEdition.ayahs) || arabicEdition.ayahs.length === 0) {
+          throw new Error('Unexpected Quran response.')
+        }
+
+        const combined = arabicEdition.ayahs.map((ayah, index) => ({
           numberInSurah: ayah.numberInSurah,
-          arabic: ayah.arabic,
-          translation: ayah.translation || '',
-          audioUrl: ayah.audio || '',
+          arabic: ayah.text,
+          translation: englishEdition?.ayahs?.[index]?.text ?? '',
+          audioUrl: audioEdition?.ayahs?.[index]?.audio ?? '',
         }))
 
         if (combined.length === 0) {
@@ -174,19 +208,19 @@ export function QuranPage() {
         }
 
         saveFallback(combined, {
-          name,
-          englishName: metaJson.englishName || `Surah ${surahNumber}`,
-          revelationType,
-          ayahs: numberOfAyahs,
+          name: arabicEdition.name,
+          englishName: arabicEdition.englishName,
+          revelationType: arabicEdition.revelationType,
+          ayahs: arabicEdition.numberOfAyahs,
         })
 
         if (!isMounted) return
 
         const nextMeta = {
-          name: metaJson.name,
-          englishName: metaJson.englishName || `Surah ${surahNumber}`,
-          revelationType: metaJson.revelationType,
-          ayahs: metaJson.numberOfAyahs,
+          name: arabicEdition.name,
+          englishName: arabicEdition.englishName,
+          revelationType: arabicEdition.revelationType,
+          ayahs: arabicEdition.numberOfAyahs,
         }
 
         setMeta(nextMeta)
@@ -225,6 +259,7 @@ export function QuranPage() {
           return
         }
 
+        console.error('loadSurah failed', err)
         setError(err)
         setVerses([])
       } finally {
@@ -299,7 +334,11 @@ export function QuranPage() {
       return
     }
     if (!verses.length) return
-    playAyahAt(0)
+    const startIndex =
+      currentAyahIndex !== null && currentAyahIndex >= 0 && currentAyahIndex < verses.length
+        ? currentAyahIndex
+        : 0
+    playAyahAt(startIndex)
   }
 
   useEffect(() => {
@@ -314,24 +353,23 @@ export function QuranPage() {
 
   return (
     <div className="quran-page">
-      <div className="maintenance-banner" style={{background:'#ff9800',color:'#fff',padding:'8px 12px',textAlign:'center',fontSize:'14px'}}>
-        🛠️ Maintenance in progress – audio may be intermittent. Thank you for your patience.
-      </div>
       <header className="quran-header">
         <h1 className="quran-title">Quran</h1>
-        <div className="quran-meta">
-          <p>
-            {meta.name} ({meta.englishName})
-          </p>
-          <p>
-            {meta.revelationType} • {meta.ayahs} ayahs
-          </p>
-        </div>
+        {meta.name && (
+          <div className="quran-meta">
+            <p>
+              {meta.name} ({meta.englishName})
+            </p>
+            <p>
+              {meta.revelationType} • {meta.ayahs} ayahs
+            </p>
+          </div>
+        )}
         <div className="quran-controls">
           <select
             value={surahNumber}
             onChange={handleSelectSurah}
-            className="surah-select"
+            className="quran-surah-select"
             disabled={loading}
           >
             {surahList.map((surah) => (
@@ -340,8 +378,8 @@ export function QuranPage() {
               </option>
             ))}
           </select>
-          <Button onClick={handleToggleSurahAudio} disabled={loading || error}>
-            {isPlaying ? 'Pause' : 'Play Surah'}
+          <Button onClick={handleToggleSurahAudio} disabled={loading || error || isBuffering}>
+            {isBuffering ? 'Buffering…' : isPlaying ? 'Pause' : 'Play Surah'}
           </Button>
         </div>
       </header>
@@ -358,11 +396,13 @@ export function QuranPage() {
               <div
                 key={verse.numberInSurah}
                 ref={(el) => (verseRefs.current[index] = el)}
-                className={`quran-verse ${currentAyahIndex === index ? 'is-playing' : ''}`}
+                className={`quran-verse ${currentAyahIndex === index ? 'quran-verse-active' : ''}`}
                 onClick={() => playAyahAt(index)}
               >
-                <p className="verse-arabic">{verse.arabic}</p>
-                <p className="verse-translation">{verse.translation}</p>
+                <div className="quran-verse-text">
+                  <p className="quran-verse-ar">{verse.arabic}</p>
+                  <p className="quran-verse-en">{verse.translation}</p>
+                </div>
               </div>
             ))}
           </div>
