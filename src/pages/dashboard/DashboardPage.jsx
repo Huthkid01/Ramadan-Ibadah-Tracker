@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/useAuth'
 import { Button } from '../../components/ui/Button'
-import { WeeklySalahChart } from '../../components/dashboard/WeeklySalahChart'
+import { DailyDuaWidget } from '../../components/dashboard/DailyDuaWidget'
 import { StreakBadge } from '../../components/dashboard/StreakBadge'
 import { fetchRamadanSummary } from '../../services/ramadanLogs'
 import { DailyAyahHadith } from '../../components/dashboard/DailyAyahHadith'
@@ -33,7 +33,6 @@ function getRamadanDay(start) {
 export function DashboardPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(true)
   const [summary, setSummary] = useState(null)
   const [error, setError] = useState(null)
   const [ramadanStart, setRamadanStart] = useState(() => getRamadanStartFromEnv())
@@ -68,7 +67,6 @@ export function DashboardPage() {
 
     async function load() {
       if (!user || !ramadanStart) {
-        if (isMounted) setLoading(false)
         return
       }
       try {
@@ -79,8 +77,6 @@ export function DashboardPage() {
       } catch (err) {
         if (!isMounted) return
         setError(err)
-      } finally {
-        if (isMounted) setLoading(false)
       }
     }
 
@@ -96,13 +92,9 @@ export function DashboardPage() {
     }
   }, [user, ramadanStart])
 
-  useEffect(() => {
-    if (!ramadanDay) return
-    setSelectedRamadanDay((prev) => (prev == null ? ramadanDay : prev))
-  }, [ramadanDay])
-
+  const currentSelection = selectedRamadanDay ?? ramadanDay
   const dayStats = summary?.dayStats ?? []
-  const selectedIndex = selectedRamadanDay ? selectedRamadanDay - 1 : null
+  const selectedIndex = currentSelection ? currentSelection - 1 : null
   const selectedStats = selectedIndex != null ? dayStats[selectedIndex] : null
 
   const completionPercent = selectedStats
@@ -111,7 +103,7 @@ export function DashboardPage() {
   const totalSalahForDisplay = selectedStats
     ? selectedStats.salahCount
     : summary?.totalSalah ?? 0
-  const dayLabel = selectedRamadanDay ? `Day ${selectedRamadanDay}` : 'Today'
+  const dayLabel = currentSelection ? `Day ${currentSelection}` : 'Today'
   const quranProgressRaw = summary?.quranProgress ?? 0
   const quranProgressValue = Number.isFinite(quranProgressRaw)
     ? Math.max(0, Math.min(quranProgressRaw, 100))
@@ -121,7 +113,6 @@ export function DashboardPage() {
       ? quranProgressValue.toFixed(1)
       : quranProgressValue.toFixed(0)
   const streak = summary?.currentStreak ?? 0
-  const weekly = summary?.weekly ?? []
   const fastingDays = summary?.fastingDays ?? 0
 
   return (
@@ -159,10 +150,10 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="dashboard-hero-day-selector">
-              <span className="dashboard-hero-day-label">Ramadan day</span>
+              <span className="dashboard-hero-day-label">Ramadan</span>
               <select
                 className="dashboard-hero-day-select"
-                value={selectedRamadanDay ?? ''}
+                value={currentSelection ?? ''}
                 onChange={(event) => {
                   const value = Number(event.target.value)
                   if (Number.isNaN(value)) return
@@ -262,11 +253,11 @@ export function DashboardPage() {
       <section className="dashboard-grid-secondary">
         <Card className="dashboard-weekly-card">
           <CardHeader>
-            <CardTitle>Weekly rhythm</CardTitle>
-            <CardDescription>Your Salah consistency over the last 7 days.</CardDescription>
+            <CardTitle>Daily Dua</CardTitle>
+            <CardDescription>A prayer to reflect on for today.</CardDescription>
           </CardHeader>
           <CardContent>
-            <WeeklySalahChart data={weekly} loading={loading} />
+            <DailyDuaWidget />
           </CardContent>
         </Card>
 

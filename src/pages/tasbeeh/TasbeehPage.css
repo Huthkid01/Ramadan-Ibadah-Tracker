@@ -1,0 +1,230 @@
+.tasbeeh-page-container {
+  min-height: calc(100vh - 4rem);
+  padding: 1.5rem 1rem 6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  background-color: var(--color-bg-light);
+}
+
+.dark .tasbeeh-page-container {
+  background-color: var(--color-bg-dark);
+}
+
+.tasbeeh-header {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.tasbeeh-title {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text-dark);
+  margin: 0;
+}
+
+.tasbeeh-subtitle {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.dark .tasbeeh-title {
+  color: var(--color-text-light);
+}
+
+.dark .tasbeeh-subtitle {
+  color: #9ca3af;
+}
+
+/* Streak Section */
+.streak-container {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+
+.streak-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.streak-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.streak-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+}
+
+.dark .streak-label {
+  color: #9ca3af;
+}
+
+/* Controls Section */
+.tasbeeh-controls-section {
+  width: 100%;
+  max-width: 400px;
+  background-color: var(--color-card-light);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-light);
+}
+
+.dark .tasbeeh-controls-section {
+  background-color: var(--color-card-dark);
+  border-color: var(--color-border-dark);
+}
+
+.control-group {
+  margin-bottom: 1.5rem;
+}
+
+.control-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--color-text-dark);
+}
+
+.dark .control-label {
+  color: var(--color-text-light);
+}
+
+.target-presets {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.target-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border-light);
+  background-color: transparent;
+  color: var(--color-text-dark);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dark .target-btn {
+  border-color: var(--color-border-dark);
+  color: var(--color-text-light);
+}
+
+.target-btn:hover {
+  background-color: rgba(0,0,0,0.05);
+}
+
+.target-btn.active {
+  background-color: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.custom-target-input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border-light);
+  background-color: var(--color-bg-light);
+  color: var(--color-text-dark);
+  font-size: 0.9rem;
+}
+
+.dark .custom-target-input {
+  background-color: rgba(15, 23, 42, 0.5);
+  border-color: var(--color-border-dark);
+  color: var(--color-text-light);
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.modal-content {
+  background-color: var(--color-card-light);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 320px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.dark .modal-content {
+  background-color: var(--color-card-dark);
+  color: var(--color-text-light);
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--color-text-dark);
+}
+
+.dark .modal-title {
+  color: var(--color-text-light);
+}
+
+.modal-text {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+}
+
+.dark .modal-text {
+  color: #9ca3af;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+}
+
+.modal-btn-cancel {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.dark .modal-btn-cancel {
+  background-color: #374151;
+  color: #e5e7eb;
+}
+
+.modal-btn-confirm {
+  background-color: #ef4444;
+  color: white;
+}

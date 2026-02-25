@@ -1,0 +1,232 @@
+.qibla-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.qibla-modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: white;
+}
+
+.qibla-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  z-index: 60;
+}
+
+.qibla-modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.qibla-info {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.qibla-info h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  font-family: var(--font-heading);
+}
+
+.qibla-info p {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Compass Container */
+.compass-container {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #1e293b, #0f172a);
+  box-shadow: 
+    0 0 0 10px #334155,
+    0 0 0 20px #1e293b,
+    0 20px 50px rgba(0,0,0,0.5),
+    inset 0 0 20px rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+/* The Fixed Marker (Top of Phone) */
+.compass-indicator-top {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 20px;
+  background-color: #ef4444; /* Red indicator */
+  border-radius: 2px;
+  z-index: 10;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
+
+/* Rotating Dial */
+.compass-dial {
+  position: relative;
+  width: 90%;
+  height: 90%;
+  border-radius: 50%;
+  transition: transform 0.1s linear;
+  will-change: transform;
+}
+
+/* Compass Marks */
+.compass-mark {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform-origin: 50% 135px; /* Half of dial width (270/2) */
+  width: 2px;
+  height: 10px;
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.compass-mark.major {
+  height: 15px;
+  width: 3px;
+  background-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Cardinal Directions */
+.compass-direction {
+  position: absolute;
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: white;
+  transform-origin: center;
+}
+
+.dir-n { top: 20px; left: 50%; transform: translateX(-50%); color: #ef4444; }
+.dir-e { right: 20px; top: 50%; transform: translateY(-50%); }
+.dir-s { bottom: 20px; left: 50%; transform: translateX(-50%); }
+.dir-w { left: 20px; top: 50%; transform: translateY(-50%); }
+
+/* Kaaba/Qibla Pointer on the Dial */
+.qibla-pointer-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.qibla-icon-wrapper {
+  position: absolute;
+  top: 15%; /* Position slightly inward from the edge */
+  left: 50%;
+  transform-origin: 50% 135px; /* Match dial center (approx) */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.qibla-icon {
+  width: 32px;
+  height: 32px;
+  /* Kaaba Cube Representation */
+  background: 
+    linear-gradient(45deg, #000 0%, #333 100%);
+  border: 1px solid #fbbf24; /* Gold border */
+  position: relative;
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+}
+
+.qibla-icon::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-color: #fbbf24; /* Gold band */
+}
+
+.qibla-pointer-arrow {
+  width: 0; 
+  height: 0; 
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 10px solid #fbbf24;
+  margin-bottom: 4px;
+}
+
+/* Center Pin */
+.compass-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  border: 2px solid white;
+  z-index: 20;
+}
+
+.permission-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 2rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Calibration Message */
+.calibration-msg {
+  position: absolute;
+  bottom: -40px;
+  width: 100%;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.5; }
+}

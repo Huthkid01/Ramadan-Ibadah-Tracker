@@ -12,6 +12,7 @@ import { DashboardPage } from './pages/dashboard/DashboardPage'
 import { DailyTrackerPage } from './pages/tracker/DailyTrackerPage'
 import { RamadanCalendarPage } from './pages/calendar/RamadanCalendarPage'
 import { QuranPage } from './pages/quran/QuranPage'
+import { TasbeehPage } from './pages/tasbeeh/TasbeehPage'
 import { ErrorBoundary } from './components/layout/ErrorBoundary'
 
 createRoot(document.getElementById('root')).render(
@@ -36,6 +37,7 @@ createRoot(document.getElementById('root')).render(
                 </Route>
                 <Route path="/calendar" element={<RamadanCalendarPage />} />
                 <Route path="/quran" element={<QuranPage />} />
+                <Route path="/tasbeeh" element={<TasbeehPage />} />
               </Route>
             </Route>
 

@@ -57,12 +57,30 @@ export function AppLayout() {
             }
           >
             <span className="mobile-nav-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M6 4.5A2.5 2.5 0 0 1 8.5 2H18a1 1 0 0 1 1 1v15.5a1 1 0 0 1-1.45.89L13 17.5l-4.55 1.89A1 1 0 0 1 7 18.5V6.5a2 2 0 0 1-1-1.73z" />
                 <path d="M13 8.25 11.75 9.5 13 10.75 14.25 9.5 13 8.25zm0 0L11.5 7 13 5.75 14.5 7 13 8.25z" />
               </svg>
             </span>
             <span className="mobile-nav-label">Quran</span>
+          </NavLink>
+          <NavLink
+            to="/tasbeeh"
+            className={({ isActive }) =>
+              `mobile-nav-item${isActive ? ' mobile-nav-item-active' : ''}`
+            }
+          >
+            <span className="mobile-nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2" />
+                <path d="M12 20v2" />
+                <path d="M2 12h2" />
+                <path d="M20 12h2" />
+              </svg>
+            </span>
+            <span className="mobile-nav-label">Tasbeeh</span>
           </NavLink>
         </div>
       </nav>

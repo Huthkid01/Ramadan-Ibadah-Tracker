@@ -119,8 +119,16 @@ export async function fetchRamadanSummary(userId, ramadanStartDate) {
   const end = new Date(start)
   end.setDate(start.getDate() + 29)
 
-  const from = toDateString(start)
-  const to = toDateString(end)
+  const today = new Date()
+  const last7Start = new Date(today)
+  last7Start.setDate(today.getDate() - 6)
+
+  // Ensure query covers both Ramadan window AND last 7 days
+  const queryStart = start < last7Start ? start : last7Start
+  const queryEnd = end > today ? end : today
+
+  const from = toDateString(queryStart)
+  const to = toDateString(queryEnd)
 
   const { data, error } = await supabase
     .from('ramadan_logs')

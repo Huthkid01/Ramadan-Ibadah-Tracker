@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { QiblaCompassModal } from './QiblaCompassModal'
 
 function toRadians(deg) {
   return (deg * Math.PI) / 180
@@ -47,10 +48,10 @@ export function QiblaDirectionWidget() {
   const [error, setError] = useState(null)
   const [locLabel, setLocLabel] = useState('')
   const [loading, setLoading] = useState(false)
-  const [heading, setHeading] = useState(null)
-  const [compassActive, setCompassActive] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
 
-  function requestDirection() {
+  // Function to actually request/get position
+  const getPosition = () => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setError('Location is not available in this browser.')
       return
@@ -67,9 +68,15 @@ export function QiblaDirectionWidget() {
         setLocLabel(`${latitude.toFixed(3)}, ${longitude.toFixed(3)}`)
         setLoading(false)
       },
-      () => {
-        setError('Unable to access your location. Please allow location access.')
+      (err) => {
+        // Don't show error immediately if it's just an initial check
+        console.warn('Location access error:', err)
         setLoading(false)
+        if (err.code === 1) { // PERMISSION_DENIED
+           setError('Please enable location access to find Qibla.')
+        } else {
+           setError('Unable to retrieve location.')
+        }
       },
       {
         enableHighAccuracy: true,
@@ -79,103 +86,107 @@ export function QiblaDirectionWidget() {
     )
   }
 
+  // Initial check for permissions and location
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+        if (result.state === 'granted') {
+          getPosition()
+        } else if (result.state === 'prompt') {
+           // We can optionally try to get it, but usually best to wait for user action
+           // But user said "as long as user already allow... it should use it"
+           // "already allow" implies state is 'granted'.
+        }
+      })
+    } else {
+      // Fallback for browsers without permissions API (e.g. Safari)
+      // We can try to get position silently? 
+      // If we call getCurrentPosition and it's denied, it might prompt.
+      // We should probably wait for user interaction unless we know we have it.
+      // But let's try a "soft" check if we can? No, getCurrentPosition prompts.
+    }
+  }, [])
+
+  const handleUseLocation = () => {
+    getPosition()
+  }
+
   const hasResult = typeof bearing === 'number'
   const directionLabel = hasResult ? getDirectionLabel(bearing) : null
-  const arrowRotation =
-    hasResult && typeof heading === 'number' ? bearing - heading : bearing ?? 0
-
-  useEffect(() => {
-    if (!compassActive) return undefined
-
-    function handleOrientation(event) {
-      const alpha = event.alpha
-      if (typeof alpha !== 'number') return
-      const normalized = (360 - alpha + 360) % 360
-      setHeading(normalized)
-    }
-
-    const hasPermissionApi =
-      typeof window !== 'undefined' &&
-      window.DeviceOrientationEvent &&
-      typeof window.DeviceOrientationEvent.requestPermission === 'function'
-
-    if (hasPermissionApi) {
-      window.DeviceOrientationEvent.requestPermission()
-        .then((state) => {
-          if (state === 'granted') {
-            window.addEventListener('deviceorientation', handleOrientation)
-          }
-        })
-        .catch((e) => {
-          console.error(e)
-          setCompassActive(false)
-        })
-    } else if (typeof window !== 'undefined' && 'DeviceOrientationEvent' in window) {
-      window.addEventListener('deviceorientation', handleOrientation)
-    }
-
-    return () => {
-      if (typeof window !== 'undefined' && 'DeviceOrientationEvent' in window) {
-        window.removeEventListener('deviceorientation', handleOrientation)
-      }
-    }
-  }, [compassActive])
 
   return (
-    <div className="qibla-widget">
-      <p className="qibla-text">
-        Find the direction of the Qibla from your current location.
-      </p>
-      <button
-        type="button"
-        onClick={requestDirection}
-        className="btn btn-primary qibla-button"
-        disabled={loading}
-      >
-        {loading ? 'Finding direction...' : 'Use my location'}
-      </button>
-
-      {hasResult ? (
-        <button
-          type="button"
-          className="qibla-compass-button"
-          onClick={() => setCompassActive((prev) => !prev)}
-        >
-          {compassActive ? 'Disable compass' : 'Enable compass'}
-        </button>
-      ) : null}
-
-      {hasResult ? (
-        <div className="qibla-result">
-          <div className="qibla-compass">
-            <div className="qibla-compass-label qibla-compass-label-n">N</div>
-            <div className="qibla-compass-label qibla-compass-label-e">E</div>
-            <div className="qibla-compass-label qibla-compass-label-s">S</div>
-            <div className="qibla-compass-label qibla-compass-label-w">W</div>
-            <div
-              className="qibla-arrow"
-              style={{ transform: `rotate(${arrowRotation}deg)` }}
-            />
-          </div>
-          <div className="qibla-details">
-            <div className="qibla-angle">
-              Qibla: <strong>{bearing.toFixed(0)}°</strong> from North ({directionLabel})
-            </div>
-            {locLabel ? (
-              <div className="qibla-location">Based on your location: {locLabel}</div>
-            ) : null}
-            <div className="qibla-note">
-              Stand straight, hold your phone flat, and face the arrow&apos;s direction.
-            </div>
-          </div>
+    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+      <div className="flex flex-col items-center text-center space-y-4">
+        <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M16.2 7.8l-2 6.3-6.4 2.1 2-6.3z"/>
+          </svg>
         </div>
-      ) : (
-        <p className="qibla-hint">
-          Location is only used in your browser to calculate the direction, and is not stored.
-        </p>
-      )}
+        
+        <div>
+          <h3 className="font-heading font-semibold text-lg text-slate-800 dark:text-slate-100">
+            Qibla Finder
+          </h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Find the Kaaba direction
+          </p>
+        </div>
 
-      {error ? <p className="qibla-error">{error}</p> : null}
+        {error ? (
+          <div className="text-sm text-red-500 bg-transparent dark:bg-red-900/10 p-3 rounded-lg w-full border border-red-200 dark:border-red-900/30">
+            {error}
+            <button 
+              onClick={handleUseLocation}
+              className="block w-full mt-3 py-2 px-3 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : hasResult ? (
+          <div className="w-full space-y-4">
+            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
+               <div className="text-3xl font-bold text-slate-800 dark:text-slate-100">
+                 {bearing.toFixed(0)}°
+               </div>
+               <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                 {directionLabel}
+               </div>
+               {locLabel && (
+                 <div className="text-xs text-slate-400 mt-1">
+                   {locLabel}
+                 </div>
+               )}
+            </div>
+            
+            <button
+              onClick={() => setModalOpen(true)}
+              className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-sm shadow-blue-600/20"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+              </svg>
+              Enable Compass
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={handleUseLocation}
+            disabled={loading}
+            className="w-full py-2.5 px-4 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Locating...' : 'Use My Location'}
+          </button>
+        )}
+      </div>
+
+      <QiblaCompassModal 
+        isOpen={modalOpen} 
+        onClose={() => setModalOpen(false)}
+        qiblaBearing={bearing || 0}
+        locationName={locLabel}
+      />
     </div>
   )
 }

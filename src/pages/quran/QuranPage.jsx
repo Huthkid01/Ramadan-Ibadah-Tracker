@@ -445,6 +445,9 @@ export function QuranPage() {
                 className={`quran-verse ${currentAyahIndex === index ? 'quran-verse-active' : ''}`}
                 onClick={() => playAyahAt(index)}
               >
+                <div className="quran-verse-meta">
+                  <span className="quran-verse-number">{verse.numberInSurah}</span>
+                </div>
                 <div className="quran-verse-text">
                   <p className="quran-verse-ar">{verse.arabic}</p>
                   <p className="quran-verse-en">{verse.translation}</p>

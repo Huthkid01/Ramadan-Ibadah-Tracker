@@ -188,6 +188,7 @@ export function RamadanCalendarPage() {
                         entry.fasted ? ' calendar-cell-fasted' : ''
                       }`
                       const gregorian = date.getDate()
+                      const monthName = date.toLocaleDateString('en-US', { month: 'short' })
                       const ramadanIndex = entry.index ?? null
                       return (
                         <div
@@ -195,7 +196,9 @@ export function RamadanCalendarPage() {
                           className={className}
                           onClick={() => handleToggleFasted(entry.date)}
                         >
-                          <span className="calendar-cell-date">{gregorian}</span>
+                          <div className="flex items-center justify-between w-full">
+                      <span className="calendar-cell-date">{monthName} {gregorian}</span>
+                    </div>
                           {ramadanIndex ? (
                             <span className="calendar-cell-ramadan">Day {ramadanIndex}</span>
                           ) : null}
