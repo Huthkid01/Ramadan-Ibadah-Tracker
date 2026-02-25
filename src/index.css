@@ -1554,6 +1554,7 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus, text
   gap: 0.1rem;
   font-size: 0.7rem;
   background: #eef2ff;
+  overflow: hidden;
 }
 
 .calendar-cell-fasted {
@@ -1565,9 +1566,25 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus, text
   font-weight: 500;
 }
 
+@media (max-width: 640px) {
+  .calendar-cell-fasted .calendar-cell-ramadan::after {
+    content: " · Fast";
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-cell-fasted .calendar-cell-ramadan::after {
+    content: " ✓";
+  }
+}
+
 .calendar-cell-date {
   font-weight: 600;
   color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 .calendar-cell-month {
@@ -1581,6 +1598,11 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus, text
 .calendar-cell-ramadan {
   font-size: 0.7rem;
   color: #4b5563;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  display: block;
 }
 
 .calendar-cell-outside {
